@@ -11,20 +11,20 @@ CORS(app)
 # )
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(app)
+# db.init_app(app)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+# @app.before_first_request
+# def create_tables():
+#     db.create_all()
 
 @app.route('/')
 def home():
     return "Welcome to micro lending backend"
 
-@app.route('/api/user', methods=['GET'])
+@app.route('/api/user', methods=['POST'])
 def get_user_by_mobile():
     data = request.json()
-    mobileNumber = data.get('mobileNumber')
+    mobileNumber = data.get('mobile')
 
     # user = User.query.filter_by(mobileNumber).first()
     # if not user:
