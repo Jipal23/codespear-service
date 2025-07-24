@@ -11,7 +11,12 @@ def home():
 @app.route('/api/register', methods=['POST'])
 def approve_or_not():
     data = request.get_json()
-    annual_income = data.get('annualIncome')
+    annual_income_raw = data.get('annualIncome')
+    
+    try:
+        annual_income = int(annual_income_raw.replace(",", "").strip())
+    except ValueError:
+        return jsonify({'error': 'Annual income must be a number'}), 400
     
     if annual_income < 150000:
         response = {
