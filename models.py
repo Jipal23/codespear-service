@@ -18,9 +18,10 @@ class User(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'annual_income': self.annual_income,
-            'credit_limit': self.credit_limit,
-            'interest_rate': self.interest_rate,
+            'mobileNumber':self.mobileNumber,
+            'annualIncome': self.annualIncome,
+            'creditLimit': self.creditLimit,
+            'interestRate': self.interestRate,
             'tenure': self.tenure,
             'status': self.status
         }

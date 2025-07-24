@@ -66,7 +66,7 @@ def get_user_by_mobile():
 def approve_or_not():
     data = request.get_json()
     name = data.get('fullName')
-    mobileNumber = data.get('mobileNumber')
+    mobileNumber = data.get('mobile')
     annual_income_raw = data.get('annualIncome')
     
     try:
