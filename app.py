@@ -30,6 +30,11 @@ def get_user_by_mobile():
     # if not user:
     #     return jsonify({'error': 'User not found'}), 404
 
+    try:
+        mobile_number = int(mobile_number)
+    except ValueError:
+        return jsonify({'error': 'Invalid mobile number'}), 400
+
     if(mobileNumber == 9999999999):
         result = {
         'creditLimit': 1500000,
