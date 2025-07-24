@@ -23,7 +23,7 @@ def home():
 
 @app.route('/api/user', methods=['POST'])
 def get_user_by_mobile():
-    data = request.json()
+    data = request.form
     mobileNumber = data.get('mobile')
 
     # user = User.query.filter_by(mobileNumber).first()
@@ -31,7 +31,7 @@ def get_user_by_mobile():
     #     return jsonify({'error': 'User not found'}), 404
 
     try:
-        mobile_number = int(mobile_number)
+        mobileNumber = int(mobileNumber)
     except ValueError:
         return jsonify({'error': 'Invalid mobile number'}), 400
 
