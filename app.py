@@ -56,8 +56,8 @@ def approve_or_not():
     else:
         response = {
             'status': 'approved',
-            'credit_limit': 2500000,
-            'interest_rate': 8,
+            'creditLimit': 2500000,
+            'interestRate': 8,
             'tenure': 6
         }
 
