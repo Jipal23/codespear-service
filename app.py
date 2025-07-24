@@ -5,17 +5,11 @@ from models import db, User
 app = Flask(__name__)
 CORS(app)
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = (
-#     f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}"
-#     f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-# )
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
-# db.init_app(app)
-
-# @app.before_first_request
-# def create_tables():
-#     db.create_all()
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    "postgresql://postgres:codespear%40micro-lending@34.134.167.26:5432/micro_lending"
+)
 
 @app.route('/')
 def home():
@@ -26,46 +20,46 @@ def get_user_by_mobile():
     data = request.form
     mobileNumber = data.get('mobile')
 
-    # user = User.query.filter_by(mobileNumber).first()
-    # if not user:
-    #     return jsonify({'error': 'User not found'}), 404
+    user = User.query.filter_by(mobileNumber).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
 
-    try:
-        mobileNumber = int(mobileNumber)
-    except ValueError:
-        return jsonify({'error': 'Invalid mobile number'}), 400
+    # try:
+    #     mobileNumber = int(mobileNumber)
+    # except ValueError:
+    #     return jsonify({'error': 'Invalid mobile number'}), 400
 
-    if(mobileNumber == 9999999999):
-        result = {
-        'creditLimit': 1500000,
-        'interestRate': 12,
-        'tenure': 4,
-        'status': 'partial'
-    }
-    elif(mobileNumber == 1111111111):
-        result = {
-        'creditLimit': 2500000,
-        'interestRate': 8,
-        'tenure': 6,
-        'status': 'partial'
-    }
-    else:
-        result = {
-        'creditLimit': 0,
-        'interestRate': None,
-        'tenure': 0,
-        'status': 'rejected'
-        }
-        
-    # result = {
-    #     'name': user.name,
-    #     'mobileNumber': user.mobileNumber,
-    #     'annualIncome': user.annualIncome,
-    #     'creditLimit': user.creditLimit,
-    #     'interestRate': user.interestRate,
-    #     'tenure': user.tenure,
-    #     'status': user.status
+    # if(mobileNumber == 9999999999):
+    #     result = {
+    #     'creditLimit': 1500000,
+    #     'interestRate': 12,
+    #     'tenure': 4,
+    #     'status': 'partial'
     # }
+    # elif(mobileNumber == 1111111111):
+    #     result = {
+    #     'creditLimit': 2500000,
+    #     'interestRate': 8,
+    #     'tenure': 6,
+    #     'status': 'partial'
+    # }
+    # else:
+    #     result = {
+    #     'creditLimit': 0,
+    #     'interestRate': None,
+    #     'tenure': 0,
+    #     'status': 'rejected'
+    #     }
+        
+    result = {
+        'name': user.name,
+        'mobileNumber': user.mobileNumber,
+        'annualIncome': user.annualIncome,
+        'creditLimit': user.creditLimit,
+        'interestRate': user.interestRate,
+        'tenure': user.tenure,
+        'status': user.status
+    }
     return jsonify(result), 200
 
 @app.route('/api/register', methods=['POST'])
@@ -95,17 +89,17 @@ def approve_or_not():
         result = {'status': 'partial', 'creditLimit': 2500000, 'interestRate': 8, 'tenure': 6}
 
         
-    # user = User(
-    #     name=name,
-    #     mobileNumber=mobileNumber,
-    #     annualIncome=annualIncome,
-    #     creditLimit=result['creditLimit'],
-    #     interestRate=result['interestRate'],
-    #     tenure=result['tenure'],
-    #     status=result['status']
-    # )
-    # db.session.add(user)
-    # db.session.commit()
+    user = User(
+        name=name,
+        mobileNumber=mobileNumber,
+        annualIncome=annualIncome,
+        creditLimit=result['creditLimit'],
+        interestRate=result['interestRate'],
+        tenure=result['tenure'],
+        status=result['status']
+    )
+    db.session.add(user)
+    db.session.commit()
 
     return jsonify(result), 200
 
