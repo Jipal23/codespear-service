@@ -18,9 +18,9 @@ def home():
 @app.route('/api/user', methods=['POST'])
 def get_user_by_mobile():
     data = request.form
-    mobileNumber = data.get('mobile')
+    mobile_number = data.get('mobile')
 
-    user = User.query.filter_by(mobileNumber).first()
+    user = User.query.filter_by(mobile_number).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
@@ -53,10 +53,10 @@ def get_user_by_mobile():
         
     result = {
         'name': user.name,
-        'mobileNumber': user.mobileNumber,
-        'annualIncome': user.annualIncome,
-        'creditLimit': user.creditLimit,
-        'interestRate': user.interestRate,
+        'mobile_number': user.mobile_number,
+        'annual_income': user.annual_income,
+        'credit_limit': user.credit_limit,
+        'interest_rate': user.interest_rate,
         'tenure': user.tenure,
         'status': user.status
     }
@@ -66,24 +66,24 @@ def get_user_by_mobile():
 def approve_or_not():
     data = request.get_json()
     name = data.get('fullName')
-    mobileNumber = data.get('mobileNo')
+    mobile_number = data.get('mobileNo')
     annual_income_raw = data.get('annualIncome')
     
     try:
-        annualIncome = int(annual_income_raw.replace(",", "").strip())
+        annual_income = int(annual_income_raw.replace(",", "").strip())
     except ValueError:
         return jsonify({'error': 'Annual income must be a number'}), 400
     
     
-    if annualIncome < 150000:
+    if annual_income < 150000:
         result = {'status': 'rejected', 'creditLimit': 0, 'interestRate': None, 'tenure': 0}
-    elif annualIncome <= 300000:
+    elif annual_income <= 300000:
         result = {'status': 'partial', 'creditLimit': 500000, 'interestRate': 18, 'tenure': 2}
-    elif annualIncome <= 600000:
+    elif annual_income <= 600000:
         result = {'status': 'partial', 'creditLimit': 1000000, 'interestRate': 15, 'tenure': 3}
-    elif annualIncome <= 1000000:
+    elif annual_income <= 1000000:
         result = {'status': 'partial', 'creditLimit': 1500000, 'interestRate': 12, 'tenure': 4}
-    elif annualIncome <= 1500000:
+    elif annual_income <= 1500000:
         result = {'status': 'partial', 'creditLimit': 2000000, 'interestRate': 10, 'tenure': 5}
     else:
         result = {'status': 'partial', 'creditLimit': 2500000, 'interestRate': 8, 'tenure': 6}
@@ -91,10 +91,10 @@ def approve_or_not():
         
     user = User(
         name=name,
-        mobileNumber=mobileNumber,
-        annualIncome=annualIncome,
-        creditLimit=result['creditLimit'],
-        interestRate=result['interestRate'],
+        mobile_number=mobile_number,
+        annual_income=annual_income,
+        credit_limit=result['creditLimit'],
+        interest_rate=result['interestRate'],
         tenure=result['tenure'],
         status=result['status']
     )
