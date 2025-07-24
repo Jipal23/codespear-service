@@ -5,11 +5,11 @@ from models import db, User
 app = Flask(__name__)
 CORS(app)
 
-db.init_app(app)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     "postgresql://postgres:codespear%40micro-lending@34.134.167.26:5432/micro_lending"
 )
+
+db.init_app(app)
 
 @app.route('/')
 def home():
