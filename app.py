@@ -20,37 +20,37 @@ def approve_or_not():
     
     if annual_income < 150000:
         response = {
-            'status': 'rejected',
+            'status': False,
             'credit_limit': 0,
             'interest_rate': None,
             'tenure': 0
         }
     elif annual_income <= 300000:
         response = {
-            'status': 'approved',
-            'credit_limit': 500000,
-            'interest_rate': 18,
+            'status': True,
+            'creditLimit': 500000,
+            'interestRate': 18,
             'tenure': 2
         }
     elif annual_income <= 600000:
         response = {
-            'status': 'approved',
-            'credit_limit': 1000000,
-            'interest_rate': 15,
+            'status': True,
+            'creditLimit': 1000000,
+            'interestRate': 15,
             'tenure': 3
         }
     elif annual_income <= 1000000:
         response = {
-            'status': 'approved',
-            'credit_limit': 1500000,
-            'interest_rate': 12,
+            'status': True,
+            'creditLimit': 1500000,
+            'interestRate': 12,
             'tenure': 4
         }
     elif annual_income <= 1500000:
         response = {
-            'status': 'approved',
-            'credit_limit': 2000000,
-            'interest_rate': 10,
+            'status': True,
+            'creditLimit': 2000000,
+            'interestRate': 10,
             'tenure': 5
         }
     else:
