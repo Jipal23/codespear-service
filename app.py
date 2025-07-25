@@ -68,13 +68,21 @@ def approve_or_not():
         'dependents': int(data.get('dependents').replace(",", "").strip())
     }
     
-    input_df = pd.Dataframe([input])
-    input['date_of_birth'] = pd.to_datetime(input_df['date_of_birth'])
+    input_df = pd.DataFrame([input])
+    # input['date_of_birth'] = pd.to_datetime(input_df['date_of_birth'])
+    input_df['date_of_birth'] = pd.to_datetime(input_df['date_of_birth'], errors='coerce')
     input_df['age'] = 2025 - input_df['date_of_birth'].dt.year
     input_df.drop(columns=['date_of_birth'], inplace=True)
     
+    # for col in encoders:
+    #     input_df[col] = encoders[col].transform(input_df[col])
+
     for col in encoders:
-        input_df[col] = encoders[col].transform(input_df[col])
+        known_classes = set(encoders[col].classes_)
+        input_df[col] = input_df[col].apply(
+            lambda x: encoders[col].transform([x])[0] if x in known_classes else -1
+        )
+
 
     input_df = input_df[feature_columns]
 
@@ -83,7 +91,7 @@ def approve_or_not():
     if credit_score >= 60:
         credit_limit = calculate_credit_limit(annual_income,credit_score)
         tenure = calculate_tenure(credit_score)
-        interest_rate = (credit_score)
+        interest_rate = calculate_interest_rate(credit_score)
             
         result = {
             'status':'partial',
