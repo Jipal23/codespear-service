@@ -23,20 +23,44 @@ def get_user_by_mobile():
     data = request.form
     mobile_number = data.get('mobile')
 
-    user = User.query.filter_by(mobile_number).first()
+    user = User.query.filter_by(mobile_number = mobile_number).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
     
     result = {
         'name': user.name,
-        'mobile_number': user.mobile_number,
-        'annual_income': user.annual_income,
-        'credit_limit': user.credit_limit,
-        'interest_rate': user.interest_rate,
+        'mobileNumber': user.mobile_number,
+        'annualIncome': user.annual_income,
+        'creditLimit': user.credit_limit,
+        'interestRate': user.interest_rate,
         'tenure': user.tenure,
         'status': user.status
     }
     return jsonify(result), 200
+
+
+@app.route('/api/approveKyc', methods=['GET'])
+def approve_kyc():
+    mobile_number = request.args.get('mobile')
+    user = User.query.filter_by(mobile_number=mobile_number).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    user.status = 'approved' 
+    db.session.commit()
+    return "done", 200
+
+
+@app.route('/api/kyc', methods=['GET'])
+def kyc_done():
+    mobile_number = request.args.get('mobile')
+    user = User.query.filter_by(mobile_number=mobile_number).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    user.status = 'kyc' 
+    db.session.commit()
+    return "done", 200
+
+
 
 @app.route('/api/register', methods=['POST'])
 def approve_or_not():
@@ -50,6 +74,28 @@ def approve_or_not():
     except ValueError:
         return jsonify({'error': 'Annual income must be a number'}), 400
     
+
+    if (annual_income > 900000):
+        result = {
+            'status':'rejected',
+            'credit_limit':0,
+            'tenure':0,
+            'interest_rate':None
+        }
+        user = User(
+            name=name,
+            mobile_number=mobile_number,
+            annual_income=annual_income,
+            credit_limit=result['credit_limit'],
+            interest_rate=result['interest_rate'],
+            tenure=result['tenure'],
+            status=result['status']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return jsonify(result), 200
+
+
     model = joblib.load('credit_score_model.pkl')
     encoders = joblib.load('encoders.pkl')
     feature_columns = joblib.load('feature_columns.pkl')
