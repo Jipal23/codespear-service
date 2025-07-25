@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from models import db, User
+import joblib
+import pandas as pd
+from utility_functions import calculate_credit_limit, calculate_tenure, calculate_interest_rate
 
 app = Flask(__name__)
 CORS(app)
@@ -20,47 +23,44 @@ def get_user_by_mobile():
     data = request.form
     mobile_number = data.get('mobile')
 
-    user = User.query.filter_by(mobile_number).first()
+    user = User.query.filter_by(mobile_number = mobile_number).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-
-    # try:
-    #     mobileNumber = int(mobileNumber)
-    # except ValueError:
-    #     return jsonify({'error': 'Invalid mobile number'}), 400
-
-    # if(mobileNumber == 9999999999):
-    #     result = {
-    #     'creditLimit': 1500000,
-    #     'interestRate': 12,
-    #     'tenure': 4,
-    #     'status': 'partial'
-    # }
-    # elif(mobileNumber == 1111111111):
-    #     result = {
-    #     'creditLimit': 2500000,
-    #     'interestRate': 8,
-    #     'tenure': 6,
-    #     'status': 'partial'
-    # }
-    # else:
-    #     result = {
-    #     'creditLimit': 0,
-    #     'interestRate': None,
-    #     'tenure': 0,
-    #     'status': 'rejected'
-    #     }
-        
+    
     result = {
         'name': user.name,
-        'mobile_number': user.mobile_number,
-        'annual_income': user.annual_income,
-        'credit_limit': user.credit_limit,
-        'interest_rate': user.interest_rate,
+        'mobileNumber': user.mobile_number,
+        'annualIncome': user.annual_income,
+        'creditLimit': user.credit_limit,
+        'interestRate': user.interest_rate,
         'tenure': user.tenure,
         'status': user.status
     }
     return jsonify(result), 200
+
+
+@app.route('/api/approveKyc', methods=['GET'])
+def approve_kyc():
+    mobile_number = request.args.get('mobile')
+    user = User.query.filter_by(mobile_number=mobile_number).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    user.status = 'approved' 
+    db.session.commit()
+    return "done", 200
+
+
+@app.route('/api/kyc', methods=['GET'])
+def kyc_done():
+    mobile_number = request.args.get('mobile')
+    user = User.query.filter_by(mobile_number=mobile_number).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    user.status = 'kyc' 
+    db.session.commit()
+    return "done", 200
+
+
 
 @app.route('/api/register', methods=['POST'])
 def approve_or_not():
@@ -74,27 +74,91 @@ def approve_or_not():
     except ValueError:
         return jsonify({'error': 'Annual income must be a number'}), 400
     
-    
-    if annual_income < 150000:
-        result = {'status': 'rejected', 'creditLimit': 0, 'interestRate': None, 'tenure': 0}
-    elif annual_income <= 300000:
-        result = {'status': 'partial', 'creditLimit': 500000, 'interestRate': 18, 'tenure': 2}
-    elif annual_income <= 600000:
-        result = {'status': 'partial', 'creditLimit': 1000000, 'interestRate': 15, 'tenure': 3}
-    elif annual_income <= 1000000:
-        result = {'status': 'partial', 'creditLimit': 1500000, 'interestRate': 12, 'tenure': 4}
-    elif annual_income <= 1500000:
-        result = {'status': 'partial', 'creditLimit': 2000000, 'interestRate': 10, 'tenure': 5}
-    else:
-        result = {'status': 'partial', 'creditLimit': 2500000, 'interestRate': 8, 'tenure': 6}
 
+    if (annual_income > 900000):
+        result = {
+            'status':'rejected',
+            'credit_limit':0,
+            'tenure':0,
+            'interest_rate':None
+        }
+        user = User(
+            name=name,
+            mobile_number=mobile_number,
+            annual_income=annual_income,
+            credit_limit=result['credit_limit'],
+            interest_rate=result['interest_rate'],
+            tenure=result['tenure'],
+            status=result['status']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return jsonify(result), 200
+
+
+    model = joblib.load('credit_score_model.pkl')
+    encoders = joblib.load('encoders.pkl')
+    feature_columns = joblib.load('feature_columns.pkl')
+    
+    input = {
+        'annual_income':int(data.get('annualIncome').replace(",", "").strip()),
+        'employment_status':data.get('employmentStatus'),
+        'reason_for_loan':data.get('reason'),
+        'dependent_count': int(data.get('dependents').replace(",", "").strip()),
+        'bank_transactions': int(data.get('bankCredit').replace(",", "").strip()),
+        'last_utility_bill_amount': int(data.get('gasBillAmountMonthly').replace(",", "").strip()),
+        'last_mobile_recharge_amount': int(data.get('propertyBillAmountMonthly').replace(",", "").strip()),
+        'vehicle_owner': data.get('isVehicle'),
+        'realty_ownership': data.get('isShop'),
+        'date_of_birth': data.get('dateOfBirth'),
+        'dependents': int(data.get('dependents').replace(",", "").strip())
+    }
+    
+    input_df = pd.DataFrame([input])
+    # input['date_of_birth'] = pd.to_datetime(input_df['date_of_birth'])
+    input_df['date_of_birth'] = pd.to_datetime(input_df['date_of_birth'], errors='coerce')
+    input_df['age'] = 2025 - input_df['date_of_birth'].dt.year
+    input_df.drop(columns=['date_of_birth'], inplace=True)
+    
+    # for col in encoders:
+    #     input_df[col] = encoders[col].transform(input_df[col])
+
+    for col in encoders:
+        known_classes = set(encoders[col].classes_)
+        input_df[col] = input_df[col].apply(
+            lambda x: encoders[col].transform([x])[0] if x in known_classes else -1
+        )
+
+
+    input_df = input_df[feature_columns]
+
+    credit_score = model.predict(input_df)[0]
+    
+    if credit_score >= 60:
+        credit_limit = calculate_credit_limit(annual_income,credit_score)
+        tenure = calculate_tenure(credit_score)
+        interest_rate = calculate_interest_rate(credit_score)
+            
+        result = {
+            'status':'partial',
+            'credit_limit':round(credit_limit, 2),
+            'tenure':tenure,
+            'interest_rate':round(interest_rate, 2)
+        }
+    else:
+        result = {
+            'status':'rejected',
+            'credit_limit':0,
+            'tenure':0,
+            'interest_rate':None
+        }
         
     user = User(
         name=name,
         mobile_number=mobile_number,
         annual_income=annual_income,
-        credit_limit=result['creditLimit'],
-        interest_rate=result['interestRate'],
+        credit_limit=result['credit_limit'],
+        interest_rate=result['interest_rate'],
         tenure=result['tenure'],
         status=result['status']
     )
